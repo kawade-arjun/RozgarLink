@@ -6,9 +6,13 @@ const { sanitizeOpportunity, validateOpportunity } = require("../utils/sanitizeO
 const router = express.Router();
 
 // GET /api/opportunities
-router.get("/", async (_req, res, next) => {
+router.get("/", async (req, res, next) => {
   try {
-    const list = await opportunityStore.getAll();
+    const filter = {};
+    if (req.query.recruiterEmail) {
+      filter.recruiterEmail = String(req.query.recruiterEmail).trim().toLowerCase();
+    }
+    const list = await opportunityStore.getAll(filter);
     const allCandidates = await candidateStore.getAll();
 
     const enriched = list.map((opp) => {
@@ -107,7 +111,16 @@ router.post("/", async (req, res, next) => {
 // PUT /api/opportunities/:id
 router.put("/:id", async (req, res, next) => {
   try {
-    const sanitized = sanitizeOpportunity(req.body);
+    const existing = await opportunityStore.getById(req.params.id);
+    if (!existing) {
+      return res.status(404).json({ error: "Opportunity not found" });
+    }
+
+    const sanitized = sanitizeOpportunity({
+      ...req.body,
+      recruiterEmail: req.body.recruiterEmail || existing.recruiterEmail,
+      recruiterId: req.body.recruiterId || existing.recruiterId
+    });
     delete sanitized.id;
 
     const error = validateOpportunity(sanitized);
@@ -116,10 +129,6 @@ router.put("/:id", async (req, res, next) => {
     }
 
     const updated = await opportunityStore.update(req.params.id, sanitized);
-    if (!updated) {
-      return res.status(404).json({ error: "Opportunity not found" });
-    }
-
     res.json(updated);
   } catch (err) {
     next(err);

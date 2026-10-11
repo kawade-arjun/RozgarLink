@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import OpportunityForm from "../components/OpportunityForm.jsx";
 import ApplicantShortlist from "../components/ApplicantShortlist.jsx";
 
-export default function ManageOpportunities({ qualifications, onOpportunitiesChanged }) {
+export default function ManageOpportunities({ currentUser, qualifications, onOpportunitiesChanged }) {
   const [opportunities, setOpportunities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -12,7 +12,10 @@ export default function ManageOpportunities({ qualifications, onOpportunitiesCha
   const fetchOpportunities = async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/opportunities");
+      const url = currentUser?.email
+        ? `/api/opportunities?recruiterEmail=${encodeURIComponent(currentUser.email)}`
+        : "/api/opportunities";
+      const res = await fetch(url);
       if (!res.ok) throw new Error("Failed to load");
       const data = await res.json();
       setOpportunities(data);
@@ -26,7 +29,7 @@ export default function ManageOpportunities({ qualifications, onOpportunitiesCha
 
   useEffect(() => {
     fetchOpportunities();
-  }, []);
+  }, [currentUser?.email]);
 
   const handleSaveSuccess = () => {
     setEditingOpp(null);
@@ -62,6 +65,7 @@ export default function ManageOpportunities({ qualifications, onOpportunitiesCha
         <OpportunityForm
           opportunity={editingOpp}
           qualifications={qualifications}
+          currentUser={currentUser}
           onSaveSuccess={handleSaveSuccess}
           onCancel={() => setEditingOpp(null)}
         />
@@ -79,7 +83,7 @@ export default function ManageOpportunities({ qualifications, onOpportunitiesCha
             <p className="muted">Loading opportunities…</p>
           ) : opportunities.length === 0 ? (
             <div className="empty-state">
-              <p className="muted">No opportunities yet. Add one to start matching.</p>
+              <p className="muted">No opportunities posted yet. Create your first opportunity using the form on the left.</p>
             </div>
           ) : (
             <div className="opp-list stack">

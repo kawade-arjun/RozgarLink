@@ -280,6 +280,7 @@ export default function App() {
       ) : (
         <main>
           <ManageOpportunities
+            currentUser={currentUser}
             qualifications={qualifications}
             onOpportunitiesChanged={() => setRefreshKey((k) => k + 1)}
           />

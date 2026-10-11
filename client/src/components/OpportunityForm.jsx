@@ -4,6 +4,7 @@ import TagListInput from "./TagListInput.jsx";
 export default function OpportunityForm({
   opportunity,
   qualifications,
+  currentUser,
   onSaveSuccess,
   onCancel
 }) {
@@ -16,10 +17,10 @@ export default function OpportunityForm({
   const [allowedLocations, setAllowedLocations] = useState([]);
   const [requiredCertifications, setRequiredCertifications] = useState([]);
   const [requiredSkills, setRequiredSkills] = useState([]);
-  const [salary, setSalary] = useState(500000);
-  const [commuteDistanceKm, setCommuteDistanceKm] = useState(15);
+  const [salary, setSalary] = useState("");
+  const [commuteDistanceKm, setCommuteDistanceKm] = useState("");
   const [shift, setShift] = useState("Flexible");
-  const [timelineDays, setTimelineDays] = useState(30);
+  const [timelineDays, setTimelineDays] = useState("");
 
   const [submitting, setSubmitting] = useState(false);
   const [serverError, setServerError] = useState("");
@@ -36,10 +37,10 @@ export default function OpportunityForm({
       setAllowedLocations(opportunity.criteria?.allowedLocations || []);
       setRequiredCertifications(opportunity.criteria?.requiredCertifications || []);
       setRequiredSkills(opportunity.requiredSkills || []);
-      setSalary(opportunity.salary ?? 500000);
-      setCommuteDistanceKm(opportunity.commuteDistanceKm ?? 15);
+      setSalary(opportunity.salary !== undefined && opportunity.salary !== null ? opportunity.salary : "");
+      setCommuteDistanceKm(opportunity.commuteDistanceKm !== undefined && opportunity.commuteDistanceKm !== null ? opportunity.commuteDistanceKm : "");
       setShift(opportunity.shift || "Flexible");
-      setTimelineDays(opportunity.timelineDays ?? 30);
+      setTimelineDays(opportunity.timelineDays !== undefined && opportunity.timelineDays !== null ? opportunity.timelineDays : "");
     } else {
       setTitle("");
       setCompany("");
@@ -50,10 +51,10 @@ export default function OpportunityForm({
       setAllowedLocations([]);
       setRequiredCertifications([]);
       setRequiredSkills([]);
-      setSalary(500000);
-      setCommuteDistanceKm(15);
+      setSalary("");
+      setCommuteDistanceKm("");
       setShift("Flexible");
-      setTimelineDays(30);
+      setTimelineDays("");
     }
     setServerError("");
   }, [opportunity, qualifications]);
@@ -104,6 +105,8 @@ export default function OpportunityForm({
       title: title.trim(),
       company: company.trim(),
       location: location.trim(),
+      recruiterEmail: currentUser?.email || null,
+      recruiterId: currentUser?.id || null,
       workModes,
       remote: isRemote,
       criteria: {
@@ -114,10 +117,10 @@ export default function OpportunityForm({
       },
       requiredSkills,
       preferredSkills: [],
-      salary: Number(salary) || 500000,
-      commuteDistanceKm: Number(commuteDistanceKm) || 15,
+      salary: salary === "" ? 0 : Number(salary),
+      commuteDistanceKm: commuteDistanceKm === "" ? 0 : Number(commuteDistanceKm),
       shift,
-      timelineDays: Number(timelineDays) || 30
+      timelineDays: timelineDays === "" ? 30 : Number(timelineDays)
     };
 
     try {
@@ -220,8 +223,9 @@ export default function OpportunityForm({
           type="number"
           min="0"
           step="50000"
+          placeholder="e.g. 500000"
           value={salary}
-          onChange={(e) => setSalary(Number(e.target.value))}
+          onChange={(e) => setSalary(e.target.value === "" ? "" : Number(e.target.value))}
         />
         <small className="muted">Used for candidate salary fit scoring (P_offer vs P_ask).</small>
       </div>
@@ -233,8 +237,9 @@ export default function OpportunityForm({
           type="number"
           min="0"
           max="150"
+          placeholder="e.g. 15"
           value={commuteDistanceKm}
-          onChange={(e) => setCommuteDistanceKm(Number(e.target.value))}
+          onChange={(e) => setCommuteDistanceKm(e.target.value === "" ? "" : Number(e.target.value))}
         />
         <small className="muted">Distance from city hub/office (D_job). 0 if remote.</small>
       </div>
@@ -259,8 +264,9 @@ export default function OpportunityForm({
           type="number"
           min="1"
           max="180"
+          placeholder="e.g. 30"
           value={timelineDays}
-          onChange={(e) => setTimelineDays(Number(e.target.value))}
+          onChange={(e) => setTimelineDays(e.target.value === "" ? "" : Number(e.target.value))}
         />
         <small className="muted">Target start timeline for applicant availability scoring.</small>
       </div>

@@ -9,8 +9,8 @@ function cleanDoc(doc) {
   return obj;
 }
 
-async function getAll() {
-  const docs = await Opportunity.find({}).lean();
+async function getAll(filter = {}) {
+  const docs = await Opportunity.find(filter).lean();
   return docs.map((d) => {
     delete d._id;
     delete d.__v;

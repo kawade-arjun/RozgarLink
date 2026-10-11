@@ -71,6 +71,8 @@ function sanitizeOpportunity(p = {}) {
     title: String(p.title || "").trim(),
     company: String(p.company || "").trim(),
     location: String(p.location || "").trim(),
+    recruiterEmail: p.recruiterEmail ? String(p.recruiterEmail).trim().toLowerCase() : null,
+    recruiterId: p.recruiterId ? String(p.recruiterId).trim() : null,
     workModes,
     remote: isRemote,
     criteria: {
@@ -81,8 +83,8 @@ function sanitizeOpportunity(p = {}) {
     },
     requiredSkills: toCleanUniqueList(p.requiredSkills),
     preferredSkills: toCleanUniqueList(p.preferredSkills),
-    salary: p.salary !== undefined && p.salary !== "" ? Number(p.salary) : 500000,
-    commuteDistanceKm: p.commuteDistanceKm !== undefined && p.commuteDistanceKm !== "" ? Number(p.commuteDistanceKm) : 15,
+    salary: p.salary !== undefined && p.salary !== "" ? Number(p.salary) : 0,
+    commuteDistanceKm: p.commuteDistanceKm !== undefined && p.commuteDistanceKm !== "" ? Number(p.commuteDistanceKm) : 0,
     shift: String(p.shift || "Flexible").trim(),
     timelineDays: p.timelineDays !== undefined && p.timelineDays !== "" ? Number(p.timelineDays) : 30,
     applicants: Array.isArray(p.applicants) ? p.applicants : []
