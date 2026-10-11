@@ -1,0 +1,28 @@
+[
+  {
+    "title": "Frontend Developer",
+    "company": "Acme Innovations",
+    "location": "Pune",
+    "workModes": [
+      "Online"
+    ],
+    "remote": true,
+    "criteria": {
+      "minQualification": "10th",
+      "minExperienceYears": 1,
+      "allowedLocations": [],
+      "requiredCertifications": [
+        "ITI Electrician"
+      ]
+    },
+    "requiredSkills": [
+      "React",
+      "SQL",
+      "Devops",
+      "github",
+      "git"
+    ],
+    "preferredSkills": [],
+    "id": "409c1f05-ac6c-4db5-a31f-03ef36c8b6b7"
+  }
+]
