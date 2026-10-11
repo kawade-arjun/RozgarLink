@@ -33,14 +33,20 @@ export default function OpportunityCard({
             {opp.title}
           </h3>
           <div className="opp-meta">
-            {opp.company} | {opp.location} | Work Mode: {workModeText}
-            {opp.salary ? ` | ₹${Number(opp.salary).toLocaleString()}/yr` : ""}
-            {opp.shift ? ` | Shift: ${opp.shift}` : ""}
+            🏢 {opp.company} | 📍 {opp.location} | 💼 Work Mode: {workModeText}
+            {opp.salary ? ` | 💰 ₹${Number(opp.salary).toLocaleString()}/yr` : ""}
+            {opp.shift ? ` | ⏱️ Shift: ${opp.shift}` : ""}
+            {` | 👥 Applicants: ${opp.applicantsCount ?? opp.applicants?.length ?? 0}`}
           </div>
           <div className="status-badge-container">
             <span className={`status-pill ${getStatusBadgeClass()}`}>
               {status}
             </span>
+            {hasApplied && (
+              <span className="btn-applied" style={{ padding: "0.2rem 0.6rem", fontSize: "0.82rem", marginLeft: "0.4rem" }}>
+                ✓ Applied
+              </span>
+            )}
           </div>
         </div>
 
@@ -70,9 +76,6 @@ export default function OpportunityCard({
         </div>
       )}
 
-      {/* Summary Ranking Reason if available */}
-      {opp.reason && <p className="opp-ranking-reason">{opp.reason}</p>}
-
       {/* When NOT ELIGIBLE: do not do skill mapping, give reasons why not eligible */}
       {!isEligible && (
         <div className="explanation-section">
@@ -88,52 +91,17 @@ export default function OpportunityCard({
         </div>
       )}
 
-      {/* When ELIGIBLE: do skill mapping */}
-      {isEligible && (
+      {/* Required Skills for Opportunity */}
+      {isEligible && reqSkills.length > 0 && (
         <div className="explanation-section">
-          <strong className="explanation-title">Skills Overview</strong>
-          {reqSkills.length > 0 ? (
-            <div className="skills-breakdown stack">
-              <div className="skill-line">
-                <span className="skill-line-label">Required Skills:</span>
-                <div className="chips">
-                  {reqSkills.map((s) => (
-                    <span key={s} className="chip">
-                      {s}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              {matchingSkills.length > 0 && (
-                <div className="skill-line">
-                  <span className="skill-line-label">Matching Skills:</span>
-                  <div className="chips">
-                    {matchingSkills.map((s) => (
-                      <span key={s} className="chip have">
-                        {s}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {missingSkills.length > 0 && (
-                <div className="skill-line">
-                  <span className="skill-line-label">Missing Skills:</span>
-                  <div className="chips">
-                    {missingSkills.map((s) => (
-                      <span key={s} className="chip miss">
-                        {s}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          ) : (
-            <p className="muted">No specific required skills listed for this opportunity.</p>
-          )}
+          <strong className="explanation-title">Required Skills:</strong>
+          <div className="chips" style={{ marginTop: "0.4rem" }}>
+            {reqSkills.map((s) => (
+              <span key={s} className="chip">
+                {s}
+              </span>
+            ))}
+          </div>
         </div>
       )}
 

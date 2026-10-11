@@ -17,7 +17,8 @@ const SYNONYMS = {
   "html": ["html5", "hypertext markup language"],
   "css": ["css3", "cascading style sheets"],
   "tailwind css": ["tailwind", "tailwindcss"],
-  "git": ["github", "git hub", "version control"],
+  "git": ["git cli", "version control", "vcs"],
+  "github": ["git hub", "github platform", "github actions"],
   "python": ["python3", "py"],
   "sql": ["mysql", "postgresql", "postgres", "structured query language", "sqlite"],
   "machine learning": ["ml"],
@@ -32,7 +33,13 @@ const SYNONYMS = {
   "panel maintenance": ["panel board maintenance", "switchboard maintenance"],
   "safety procedures": ["safety protocols", "industrial safety", "ohs"],
   "plc programming": ["plc", "ladder logic"],
-  "troubleshooting": ["fault finding", "debugging", "problem solving"]
+  "troubleshooting": ["fault finding", "debugging", "problem solving"],
+  "legal drafting": ["drafting", "contract drafting", "legal writing"],
+  "case research": ["legal research", "case law research", "judgement analysis"],
+  "corporate law": ["company law", "contract law", "compliance"],
+  "graphic design": ["ui design", "photoshop", "canva", "digital illustration", "visual design"],
+  "content writing": ["creative writing", "article writing", "copywriting", "blog writing", "content creation"],
+  "patient care": ["nursing", "bedside care", "clinical care", "vital monitoring"]
 };
 
 const key = (s) => String(s ?? "").toLowerCase().replace(/[^a-z0-9+#]/g, "");

@@ -274,10 +274,19 @@ function scoreApplicantForJob(opp, candidate, weights = {}) {
 }
 
 function rankApplicantsForJob(opp, applicantsList, candidatesStoreList, weights = {}) {
+  const { explainEligibility } = require("./eligibility");
+
   const applicantsWithProfiles = applicantsList
     .map((app) => {
-      const profile = candidatesStoreList.find((c) => c.id === app.candidateId);
+      const candidateId = app.candidateId || app.id;
+      const profile = candidatesStoreList.find((c) => c.id === candidateId);
       if (!profile) return null;
+
+      // GATE 1 HARD ELIGIBILITY CHECK:
+      // If an applicant is not eligible for this opportunity, they MUST NOT be listed in the applicant list
+      const eligibility = explainEligibility(profile, opp);
+      if (!eligibility.eligible) return null;
+
       return {
         ...profile,
         appliedAt: app.appliedAt,

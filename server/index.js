@@ -20,6 +20,11 @@ app.use("/api", matching);
 app.get("/health", (_req, res) => res.json({ ok: true }));
 app.use(express.static(path.join(__dirname, "../client/dist")));
 
+// Fallback all other GET requests to index.html for client-side routing
+app.get("*", (_req, res) => {
+  res.sendFile(path.join(__dirname, "../client/dist/index.html"));
+});
+
 // General error handler
 app.use((err, _req, res, _next) => {
   console.error(err);
@@ -30,9 +35,9 @@ const PORT = process.env.PORT || 5000;
 
 connectDB()
   .then(() => {
-    app.listen(PORT, "127.0.0.1", () => console.log(`RozgarLink server running on http://127.0.0.1:${PORT}`));
+    app.listen(PORT, () => console.log(`RozgarLink server running on port ${PORT}`));
   })
   .catch((err) => {
     console.error("Starting server with MongoDB connection warning:", err.message);
-    app.listen(PORT, "127.0.0.1", () => console.log(`RozgarLink server running on http://127.0.0.1:${PORT} (Waiting for MongoDB)`));
+    app.listen(PORT, () => console.log(`RozgarLink server running on port ${PORT} (Waiting for MongoDB)`));
   });

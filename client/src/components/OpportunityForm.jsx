@@ -16,7 +16,6 @@ export default function OpportunityForm({
   const [allowedLocations, setAllowedLocations] = useState([]);
   const [requiredCertifications, setRequiredCertifications] = useState([]);
   const [requiredSkills, setRequiredSkills] = useState([]);
-  const [preferredSkills, setPreferredSkills] = useState([]);
   const [salary, setSalary] = useState(500000);
   const [commuteDistanceKm, setCommuteDistanceKm] = useState(15);
   const [shift, setShift] = useState("Flexible");
@@ -37,7 +36,6 @@ export default function OpportunityForm({
       setAllowedLocations(opportunity.criteria?.allowedLocations || []);
       setRequiredCertifications(opportunity.criteria?.requiredCertifications || []);
       setRequiredSkills(opportunity.requiredSkills || []);
-      setPreferredSkills(opportunity.preferredSkills || []);
       setSalary(opportunity.salary ?? 500000);
       setCommuteDistanceKm(opportunity.commuteDistanceKm ?? 15);
       setShift(opportunity.shift || "Flexible");
@@ -52,7 +50,6 @@ export default function OpportunityForm({
       setAllowedLocations([]);
       setRequiredCertifications([]);
       setRequiredSkills([]);
-      setPreferredSkills([]);
       setSalary(500000);
       setCommuteDistanceKm(15);
       setShift("Flexible");
@@ -116,7 +113,7 @@ export default function OpportunityForm({
         requiredCertifications
       },
       requiredSkills,
-      preferredSkills,
+      preferredSkills: [],
       salary: Number(salary) || 500000,
       commuteDistanceKm: Number(commuteDistanceKm) || 15,
       shift,
@@ -343,15 +340,6 @@ export default function OpportunityForm({
       {isRequiredSkillsEmpty && (
         <small className="field-error">At least one required skill is required.</small>
       )}
-
-      <TagListInput
-        id="opp-pref-skills"
-        label="Preferred Skills"
-        placeholder="e.g. TypeScript, Git, Docker"
-        items={preferredSkills}
-        onChange={(skills) => setPreferredSkills(skills)}
-        helperText="Used for ranking only. Never disqualifies a candidate."
-      />
 
       {serverError && (
         <div className="note" role="alert">

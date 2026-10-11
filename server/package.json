@@ -9,10 +9,12 @@
     "migrate": "node scripts/migrateToMongo.js"
   },
   "dependencies": {
+    "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
     "dotenv": "^18.0.7",
     "express": "^4.19.2",
     "mongoose": "^9.11.1",
-    "multer": "^2.3.0"
+    "multer": "^2.3.0",
+    "nodemailer": "^10.1.0"
   }
 }

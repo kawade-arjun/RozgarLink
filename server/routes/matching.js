@@ -1,15 +1,18 @@
 const express = require("express");
 const opportunityStore = require("../data/opportunityStore");
+const candidateStore = require("../data/candidateStore");
 const { explainEligibility, QUALIFICATION_LEVELS, LABELS } = require("../logic/eligibility");
 const { rankEligible } = require("../logic/ranking");
 const { buildPathway } = require("../logic/learningPathway");
 const { sanitize } = require("../utils/sanitize");
 const candidatesRouter = require("./candidates");
 const opportunitiesRouter = require("./opportunities");
+const authRouter = require("./auth");
 
 const router = express.Router();
 
 // Mount child routers under /api
+router.use("/auth", authRouter);
 router.use("/candidates", candidatesRouter);
 router.use("/opportunities", opportunitiesRouter);
 
@@ -22,6 +25,22 @@ router.get("/meta", (_req, res) =>
 async function runMatch(rawCandidate, rawWeights = {}) {
   const candidate = sanitize(rawCandidate);
   const opportunities = await opportunityStore.getAll();
+  const allCandidates = await candidateStore.getAll();
+
+  const countApplicants = (opp) => {
+    const list = [...(opp.applicants || [])];
+    allCandidates.forEach((c) => {
+      if (Array.isArray(c.appliedOpportunityIds) && c.appliedOpportunityIds.includes(opp.id)) {
+        if (!list.some((a) => (a.candidateId || a.id) === c.id)) {
+          list.push({ candidateId: c.id });
+        }
+      }
+    });
+    return list.filter((app) => {
+      const c = allCandidates.find((cand) => cand.id === app.candidateId);
+      return c && explainEligibility(c, opp).eligible;
+    }).length;
+  };
 
   // STAGE 1: explainable eligibility checks
   const eligibleOpps = [];
@@ -29,9 +48,11 @@ async function runMatch(rawCandidate, rawWeights = {}) {
 
   for (const opp of opportunities) {
     const explanation = explainEligibility(candidate, opp);
+    const applicantsCount = countApplicants(opp);
     const enrichedOpp = {
       ...opp,
-      ...explanation
+      ...explanation,
+      applicantsCount
     };
 
     if (explanation.eligible) {
@@ -54,6 +75,7 @@ async function runMatch(rawCandidate, rawWeights = {}) {
       weights: o.weights,
       matchedSkills: o.matchedSkills,
       missingSkills: o.missingSkills,
+      applicantsCount: orig?.applicantsCount ?? countApplicants(o),
       hasApplied
     };
   });

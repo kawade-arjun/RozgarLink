@@ -101,7 +101,7 @@ export default function ManageOpportunities({ qualifications, onOpportunitiesCha
                           setActiveShortlistOppId(activeShortlistOppId === opp.id ? null : opp.id)
                         }
                       >
-                        Applicants ({opp.applicants?.length || 0})
+                        Applicants ({opp.applicantsCount ?? opp.applicants?.length ?? 0})
                       </button>
                       <button
                         type="button"
@@ -133,11 +133,6 @@ export default function ManageOpportunities({ qualifications, onOpportunitiesCha
                     {(opp.requiredSkills || []).map((s) => (
                       <span key={s} className="chip have">
                         Required: {s}
-                      </span>
-                    ))}
-                    {(opp.preferredSkills || []).map((s) => (
-                      <span key={s} className="chip" style={{ background: "#f0f2f5" }}>
-                        Preferred: {s}
                       </span>
                     ))}
                   </div>

@@ -9,7 +9,38 @@ const router = express.Router();
 router.get("/", async (_req, res, next) => {
   try {
     const list = await opportunityStore.getAll();
-    res.json(list);
+    const allCandidates = await candidateStore.getAll();
+
+    const enriched = list.map((opp) => {
+      const applicantsList = [...(opp.applicants || [])];
+      allCandidates.forEach((c) => {
+        if (Array.isArray(c.appliedOpportunityIds) && c.appliedOpportunityIds.includes(opp.id)) {
+          if (!applicantsList.some((a) => (a.candidateId || a.id) === c.id)) {
+            applicantsList.push({
+              candidateId: c.id,
+              candidateName: c.name,
+              appliedAt: c.updatedAt || new Date().toISOString(),
+              status: "Applied"
+            });
+          }
+        }
+      });
+
+      const { explainEligibility } = require("../logic/eligibility");
+      const eligibleApplicants = applicantsList.filter((app) => {
+        const candidateId = app.candidateId || app.id;
+        const profile = allCandidates.find((c) => c.id === candidateId);
+        return profile && explainEligibility(profile, opp).eligible;
+      });
+
+      return {
+        ...opp,
+        applicants: eligibleApplicants,
+        applicantsCount: eligibleApplicants.length
+      };
+    });
+
+    res.json(enriched);
   } catch (err) {
     next(err);
   }
@@ -22,7 +53,33 @@ router.get("/:id", async (req, res, next) => {
     if (!opp) {
       return res.status(404).json({ error: "Opportunity not found" });
     }
-    res.json(opp);
+    const allCandidates = await candidateStore.getAll();
+    const applicantsList = [...(opp.applicants || [])];
+    allCandidates.forEach((c) => {
+      if (Array.isArray(c.appliedOpportunityIds) && c.appliedOpportunityIds.includes(opp.id)) {
+        if (!applicantsList.some((a) => (a.candidateId || a.id) === c.id)) {
+          applicantsList.push({
+            candidateId: c.id,
+            candidateName: c.name,
+            appliedAt: c.updatedAt || new Date().toISOString(),
+            status: "Applied"
+          });
+        }
+      }
+    });
+
+    const { explainEligibility } = require("../logic/eligibility");
+    const eligibleApplicants = applicantsList.filter((app) => {
+      const candidateId = app.candidateId || app.id;
+      const profile = allCandidates.find((c) => c.id === candidateId);
+      return profile && explainEligibility(profile, opp).eligible;
+    });
+
+    res.json({
+      ...opp,
+      applicants: eligibleApplicants,
+      applicantsCount: eligibleApplicants.length
+    });
   } catch (err) {
     next(err);
   }
@@ -141,8 +198,22 @@ router.get("/:id/applicants", async (req, res, next) => {
       return res.status(404).json({ error: "Opportunity not found" });
     }
 
-    const applicantsList = opp.applicants || [];
     const allCandidates = await candidateStore.getAll();
+    const applicantsList = [...(opp.applicants || [])];
+
+    // Ensure candidates with appliedOpportunityIds are included
+    allCandidates.forEach((c) => {
+      if (Array.isArray(c.appliedOpportunityIds) && c.appliedOpportunityIds.includes(opp.id)) {
+        if (!applicantsList.some((a) => (a.candidateId || a.id) === c.id)) {
+          applicantsList.push({
+            candidateId: c.id,
+            candidateName: c.name,
+            appliedAt: c.updatedAt || new Date().toISOString(),
+            status: "Applied"
+          });
+        }
+      }
+    });
     const { rankApplicantsForJob } = require("../logic/ranking");
 
     const weights = {

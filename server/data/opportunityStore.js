@@ -1,14 +1,5 @@
-const path = require("path");
 const crypto = require("crypto");
-const mongoose = require("mongoose");
 const Opportunity = require("../models/Opportunity");
-const jsonFile = require("./jsonFile");
-
-const FILE_PATH = path.join(__dirname, "opportunities.json");
-
-function isMongoReady() {
-  return mongoose.connection && mongoose.connection.readyState === 1;
-}
 
 function cleanDoc(doc) {
   if (!doc) return null;
@@ -19,133 +10,84 @@ function cleanDoc(doc) {
 }
 
 async function getAll() {
-  if (isMongoReady()) {
-    const docs = await Opportunity.find({}).lean();
-    return docs.map((d) => {
-      delete d._id;
-      delete d.__v;
-      return d;
-    });
-  }
-  return jsonFile.read(FILE_PATH);
+  const docs = await Opportunity.find({}).lean();
+  return docs.map((d) => {
+    delete d._id;
+    delete d.__v;
+    return d;
+  });
 }
 
 async function getById(id) {
-  if (isMongoReady()) {
-    const doc = await Opportunity.findOne({ id }).lean();
-    if (!doc) return null;
-    delete doc._id;
-    delete doc.__v;
-    return doc;
-  }
-  const all = await getAll();
-  return all.find((o) => o.id === id) || null;
+  const doc = await Opportunity.findOne({ id }).lean();
+  if (!doc) return null;
+  delete doc._id;
+  delete doc.__v;
+  return doc;
 }
 
 async function create(oppData) {
   const id = oppData.id || crypto.randomUUID();
-  if (isMongoReady()) {
-    const created = await Opportunity.create({
-      ...oppData,
-      id
-    });
-    return cleanDoc(created);
-  }
-  const newOpp = {
+  const created = await Opportunity.create({
     ...oppData,
     id
-  };
-  await jsonFile.update(FILE_PATH, (items) => [...items, newOpp]);
-  return newOpp;
+  });
+  return cleanDoc(created);
 }
 
 async function update(id, oppData) {
-  if (isMongoReady()) {
-    const updated = await Opportunity.findOneAndUpdate(
-      { id },
-      { $set: { ...oppData, id } },
-      { new: true, runValidators: true }
-    );
-    return cleanDoc(updated);
-  }
-  let updatedOpp = null;
-  await jsonFile.update(FILE_PATH, (items) => {
-    const index = items.findIndex((o) => o.id === id);
-    if (index === -1) {
-      return items;
-    }
-    updatedOpp = {
-      ...oppData,
-      id
-    };
-    const next = [...items];
-    next[index] = updatedOpp;
-    return next;
-  });
-  return updatedOpp;
+  const updated = await Opportunity.findOneAndUpdate(
+    { id },
+    { $set: { ...oppData, id } },
+    { new: true, runValidators: true }
+  );
+  return cleanDoc(updated);
 }
 
 async function remove(id) {
-  if (isMongoReady()) {
-    const result = await Opportunity.deleteOne({ id });
-    return result.deletedCount > 0;
-  }
-  let removed = false;
-  await jsonFile.update(FILE_PATH, (items) => {
-    const index = items.findIndex((o) => o.id === id);
-    if (index === -1) {
-      return items;
-    }
-    removed = true;
-    return items.filter((o) => o.id !== id);
-  });
-  return removed;
+  const result = await Opportunity.deleteOne({ id });
+  return result.deletedCount > 0;
 }
 
 async function addApplicant(oppId, applicant) {
-  if (isMongoReady()) {
-    const opp = await Opportunity.findOne({ id: oppId });
-    if (!opp) return null;
-    const exists = (opp.applicants || []).some((a) => a.candidateId === applicant.candidateId);
-    if (!exists) {
-      opp.applicants = opp.applicants || [];
-      opp.applicants.push({
-        candidateId: applicant.candidateId,
-        candidateName: applicant.candidateName || "",
-        appliedAt: new Date().toISOString(),
-        status: "Applied"
-      });
-      await opp.save();
-    }
-    return cleanDoc(opp);
-  }
-  let updated = null;
-  await jsonFile.update(FILE_PATH, (items) => {
-    return items.map((o) => {
-      if (o.id !== oppId) return o;
-      const applicants = o.applicants || [];
-      if (applicants.some((a) => a.candidateId === applicant.candidateId)) return o;
-      updated = {
-        ...o,
-        applicants: [
-          ...applicants,
-          {
+  const opp = await Opportunity.findOne({ id: oppId });
+  if (!opp) return null;
+  const exists = (opp.applicants || []).some((a) => a.candidateId === applicant.candidateId);
+  if (!exists) {
+    await Opportunity.updateOne(
+      { id: oppId },
+      {
+        $push: {
+          applicants: {
             candidateId: applicant.candidateId,
             candidateName: applicant.candidateName || "",
             appliedAt: new Date().toISOString(),
             status: "Applied"
           }
-        ]
-      };
-      return updated;
-    });
-  });
-  return updated;
+        }
+      }
+    );
+  }
+  const refreshed = await Opportunity.findOne({ id: oppId }).lean();
+  return cleanDoc(refreshed);
 }
 
-async function getApplicants(oppId) {
-  const opp = await getById(oppId);
-  return opp ? (opp.applicants || []) : [];
+async function updateApplicantStatus(oppId, candidateId, status) {
+  const opp = await Opportunity.findOne({ id: oppId });
+  if (!opp) return null;
+  const applicantIndex = (opp.applicants || []).findIndex((a) => a.candidateId === candidateId);
+  if (applicantIndex === -1) return null;
+
+  opp.applicants[applicantIndex].status = status;
+  await opp.save();
+  return cleanDoc(opp.toObject());
+}
+
+async function getApplicantStatus(oppId, candidateId) {
+  const opp = await Opportunity.findOne({ id: oppId }).lean();
+  if (!opp) return null;
+  const applicant = (opp.applicants || []).find((a) => a.candidateId === candidateId);
+  return applicant ? applicant.status : null;
 }
 
 module.exports = {
@@ -155,5 +97,6 @@ module.exports = {
   update,
   remove,
   addApplicant,
-  getApplicants
+  updateApplicantStatus,
+  getApplicantStatus
 };
