@@ -32,12 +32,13 @@ app.use((err, _req, res, _next) => {
 });
 
 const PORT = process.env.PORT || 5000;
+const HOST = process.env.NODE_ENV === "production" ? "0.0.0.0" : "127.0.0.1";
 
 connectDB()
   .then(() => {
-    app.listen(PORT, () => console.log(`RozgarLink server running on port ${PORT}`));
+    app.listen(PORT, HOST, () => console.log(`RozgarLink server running on http://${HOST}:${PORT}`));
   })
   .catch((err) => {
     console.error("Starting server with MongoDB connection warning:", err.message);
-    app.listen(PORT, () => console.log(`RozgarLink server running on port ${PORT} (Waiting for MongoDB)`));
+    app.listen(PORT, HOST, () => console.log(`RozgarLink server running on http://${HOST}:${PORT} (Waiting for MongoDB)`));
   });

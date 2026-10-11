@@ -3,7 +3,7 @@ const opportunityStore = require("../data/opportunityStore");
 const candidateStore = require("../data/candidateStore");
 const { explainEligibility, QUALIFICATION_LEVELS, LABELS } = require("../logic/eligibility");
 const { rankEligible } = require("../logic/ranking");
-const { buildPathway } = require("../logic/learningPathway");
+const { buildPathway, getCatalogue } = require("../logic/learningPathway");
 const { sanitize } = require("../utils/sanitize");
 const candidatesRouter = require("./candidates");
 const opportunitiesRouter = require("./opportunities");
@@ -26,6 +26,7 @@ async function runMatch(rawCandidate, rawWeights = {}) {
   const candidate = sanitize(rawCandidate);
   const opportunities = await opportunityStore.getAll();
   const allCandidates = await candidateStore.getAll();
+  const catalogue = await getCatalogue();
 
   const countApplicants = (opp) => {
     const list = [...(opp.applicants || [])];
@@ -98,7 +99,7 @@ async function runMatch(rawCandidate, rawWeights = {}) {
         missingSkills: explanation.missingSkills,
         skillCoverage: explanation.skillCoverage,
         totalRequired: (opp.requiredSkills || []).length,
-        pathway: buildPathway(candidate.skills || [], explanation.missingSkills)
+        pathway: buildPathway(candidate.skills || [], explanation.missingSkills, catalogue)
       };
     });
 

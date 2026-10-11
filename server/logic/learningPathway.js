@@ -1,17 +1,38 @@
 /**
- * OFFLINE LEARNING PATHWAYS.
- * Reads only server/data/learningResources.json. No network calls.
- * Prerequisites are resolved recursively and ordered before the skills that need them.
+ * LEARNING PATHWAYS backed by MongoDB LearningResource collection.
+ * No static JSON files needed.
  */
-const catalogue = require("../data/learningResources.json");
+const LearningResource = require("../models/LearningResource");
 const { canonical, matchSkills } = require("./skillMatcher");
 
-const LEVEL_ORDER = catalogue.levels;
+const LEVEL_ORDER = ["beginner", "intermediate", "advanced"];
+let cachedCatalogue = null;
 
-function buildPathway(candidateSkills, missingSkills) {
+async function getCatalogue() {
+  if (cachedCatalogue) return cachedCatalogue;
+  try {
+    const docs = await LearningResource.find({}).lean();
+    const skillsMap = {};
+    docs.forEach((doc) => {
+      skillsMap[doc.skill.toLowerCase().trim()] = {
+        prerequisites: doc.prerequisites || [],
+        courses: doc.courses || []
+      };
+    });
+    cachedCatalogue = { skills: skillsMap, levels: LEVEL_ORDER };
+    return cachedCatalogue;
+  } catch (err) {
+    console.error("Error loading learning resources from MongoDB:", err.message);
+    return { skills: {}, levels: LEVEL_ORDER };
+  }
+}
+
+function buildPathwayWithCatalogue(candidateSkills, missingSkills, catalogue) {
   const steps = [];
   const visited = new Set();
   const notInCatalogue = [];
+  const skillsMap = catalogue?.skills || {};
+  const levels = catalogue?.levels || LEVEL_ORDER;
 
   const have = (skill) => matchSkills(candidateSkills, [skill]).matched.length > 0;
 
@@ -20,13 +41,18 @@ function buildPathway(candidateSkills, missingSkills) {
     if (visited.has(canon)) return;
     visited.add(canon);
 
-    const entry = catalogue.skills[canon];
-    if (!entry) { notInCatalogue.push(skill); return; }
+    const entry = skillsMap[canon];
+    if (!entry) {
+      notInCatalogue.push(skill);
+      return;
+    }
 
     for (const pre of entry.prerequisites || []) {
       if (!have(pre)) visit(pre, `prerequisite for ${skill}`);
     }
-    const courses = [...entry.courses].sort((a, b) => LEVEL_ORDER.indexOf(a.level) - LEVEL_ORDER.indexOf(b.level));
+    const courses = [...(entry.courses || [])].sort(
+      (a, b) => levels.indexOf(a.level) - levels.indexOf(b.level)
+    );
     for (const c of courses) steps.push({ ...c, skill: canon, reason });
   }
 
@@ -36,4 +62,12 @@ function buildPathway(candidateSkills, missingSkills) {
   return { steps: numbered, totalHours: numbered.reduce((h, s) => h + s.hours, 0), notInCatalogue };
 }
 
-module.exports = { buildPathway };
+function buildPathway(candidateSkills, missingSkills, customCatalogue = null) {
+  const catalogue = customCatalogue || cachedCatalogue || { skills: {}, levels: LEVEL_ORDER };
+  return buildPathwayWithCatalogue(candidateSkills, missingSkills, catalogue);
+}
+
+module.exports = {
+  getCatalogue,
+  buildPathway
+};
