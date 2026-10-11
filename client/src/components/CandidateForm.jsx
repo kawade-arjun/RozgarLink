@@ -136,6 +136,58 @@ export default function CandidateForm({
         helperText="Add preferred locations one by one. Used for preference ranking."
       />
 
+      <div className="field">
+        <label htmlFor="expected-salary">Expected Annual Salary (₹)</label>
+        <input
+          id="expected-salary"
+          type="number"
+          min="0"
+          step="50000"
+          value={candidate.expectedSalary ?? 400000}
+          onChange={(e) => set({ expectedSalary: Number(e.target.value) })}
+        />
+        <small className="muted">Used for dynamic salary fit calculation against job offers.</small>
+      </div>
+
+      <div className="field">
+        <label htmlFor="commute-dist">Max Commute Distance (km)</label>
+        <input
+          id="commute-dist"
+          type="number"
+          min="1"
+          max="200"
+          value={candidate.maxCommuteKm ?? 25}
+          onChange={(e) => set({ maxCommuteKm: Number(e.target.value) })}
+        />
+        <small className="muted">Used for travel feasibility & distance scoring.</small>
+      </div>
+
+      <div className="field">
+        <label htmlFor="pref-shift">Preferred Shift</label>
+        <select
+          id="pref-shift"
+          value={candidate.preferredShift || "Flexible"}
+          onChange={(e) => set({ preferredShift: e.target.value })}
+        >
+          <option value="Flexible">Flexible / Any</option>
+          <option value="Day">Day Shift</option>
+          <option value="Night">Night Shift</option>
+        </select>
+      </div>
+
+      <div className="field">
+        <label htmlFor="notice-period">Notice Period (Days)</label>
+        <input
+          id="notice-period"
+          type="number"
+          min="0"
+          max="180"
+          value={candidate.noticePeriodDays ?? 0}
+          onChange={(e) => set({ noticePeriodDays: Number(e.target.value) })}
+        />
+        <small className="muted">0 for immediate joining. Used for recruiter availability fit.</small>
+      </div>
+
       <EducationSection
         education={candidate.education || []}
         onChange={(edu) => set({ education: edu })}

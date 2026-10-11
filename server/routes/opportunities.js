@@ -86,4 +86,83 @@ router.delete("/:id", async (req, res, next) => {
   }
 });
 
+// POST /api/opportunities/:id/apply
+router.post("/:id/apply", async (req, res, next) => {
+  try {
+    const oppId = req.params.id;
+    const { candidateId, candidateName } = req.body;
+    if (!candidateId) {
+      return res.status(400).json({ error: "candidateId is required" });
+    }
+
+    const opp = await opportunityStore.getById(oppId);
+    if (!opp) {
+      return res.status(404).json({ error: "Opportunity not found" });
+    }
+
+    const candidate = await candidateStore.getById(candidateId);
+    if (!candidate) {
+      return res.status(404).json({ error: "Candidate not found" });
+    }
+
+    // Gate 1 check: Verify eligibility
+    const { explainEligibility } = require("../logic/eligibility");
+    const explanation = explainEligibility(candidate, opp);
+    if (!explanation.eligible) {
+      return res.status(400).json({
+        error: "Candidate is not eligible for this opportunity",
+        reasons: explanation.ineligibleReasons
+      });
+    }
+
+    await opportunityStore.addApplicant(oppId, {
+      candidateId,
+      candidateName: candidateName || candidate.name
+    });
+
+    await candidateStore.addAppliedOpportunity(candidateId, oppId);
+
+    res.json({
+      success: true,
+      message: "Application submitted successfully",
+      opportunityId: oppId,
+      candidateId
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/opportunities/:id/applicants
+router.get("/:id/applicants", async (req, res, next) => {
+  try {
+    const opp = await opportunityStore.getById(req.params.id);
+    if (!opp) {
+      return res.status(404).json({ error: "Opportunity not found" });
+    }
+
+    const applicantsList = opp.applicants || [];
+    const allCandidates = await candidateStore.getAll();
+    const { rankApplicantsForJob } = require("../logic/ranking");
+
+    const weights = {
+      u_competence: req.query.u_competence,
+      u_salary: req.query.u_salary,
+      u_commute: req.query.u_commute,
+      u_availability: req.query.u_availability
+    };
+
+    const rankedApplicants = rankApplicantsForJob(opp, applicantsList, allCandidates, weights);
+    res.json({
+      opportunityId: opp.id,
+      opportunityTitle: opp.title,
+      company: opp.company,
+      totalApplicants: rankedApplicants.length,
+      applicants: rankedApplicants
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;

@@ -105,10 +105,32 @@ async function removeOpportunityInterest(oppId) {
   });
 }
 
+async function addAppliedOpportunity(candidateId, oppId) {
+  if (isMongoReady()) {
+    return Candidate.findOneAndUpdate(
+      { id: candidateId },
+      { $addToSet: { appliedOpportunityIds: oppId } },
+      { new: true }
+    );
+  }
+  return jsonFile.update(FILE_PATH, (items) => {
+    return items.map((c) => {
+      if (c.id !== candidateId) return c;
+      const applied = c.appliedOpportunityIds || [];
+      if (applied.includes(oppId)) return c;
+      return {
+        ...c,
+        appliedOpportunityIds: [...applied, oppId]
+      };
+    });
+  });
+}
+
 module.exports = {
   getAll,
   getById,
   create,
   update,
-  removeOpportunityInterest
+  removeOpportunityInterest,
+  addAppliedOpportunity
 };

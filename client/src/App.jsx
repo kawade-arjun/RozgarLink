@@ -14,8 +14,15 @@ const EMPTY = {
   experienceYears: 0,
   skills: [],
   certifications: [],
-  interestedOpportunityIds: []
+  interestedOpportunityIds: [],
+  appliedOpportunityIds: [],
+  expectedSalary: 400000,
+  maxCommuteKm: 25,
+  preferredShift: "Flexible",
+  noticePeriodDays: 0
 };
+
+const DEFAULT_WEIGHTS = { u1: 70, u2: 10.5, u3: 10.5, u4: 9.0 };
 
 export default function App() {
   const [candidate, setCandidate] = useState(EMPTY);
@@ -25,6 +32,7 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("landing"); // "landing", "find", or "manage"
   const [refreshKey, setRefreshKey] = useState(0);
+  const [weights, setWeights] = useState(DEFAULT_WEIGHTS);
 
   const reqId = useRef(0);
 
@@ -70,7 +78,7 @@ export default function App() {
     }
   }, []);
 
-  // REAL-TIME: re-runs eligibility + ranking (debounced 200ms) on candidate edit or opp refresh
+  // REAL-TIME: re-runs eligibility + ranking (debounced 200ms) on candidate edit, opp refresh, or weights adjustment
   useEffect(() => {
     const id = ++reqId.current;
     const t = setTimeout(async () => {
@@ -79,7 +87,7 @@ export default function App() {
         const res = await fetch("/api/match", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ candidate })
+          body: JSON.stringify({ candidate, weights })
         });
         const data = await res.json();
         if (id === reqId.current) {
@@ -95,7 +103,7 @@ export default function App() {
       }
     }, 200);
     return () => clearTimeout(t);
-  }, [candidate, refreshKey]);
+  }, [candidate, refreshKey, weights]);
 
   const toggleInterest = (oppId) =>
     setCandidate((c) => ({
@@ -105,11 +113,71 @@ export default function App() {
         : [...(c.interestedOpportunityIds || []), oppId]
     }));
 
+  const handleApply = async (oppId) => {
+    let currentCandidate = candidate;
+    // Auto-save candidate profile if not yet stored with an ID in database
+    if (!currentCandidate.id) {
+      if (!currentCandidate.name || !currentCandidate.location) {
+        alert("Please provide at least your Name and Current City before applying.");
+        return;
+      }
+      try {
+        const saveRes = await fetch("/api/candidates", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(currentCandidate)
+        });
+        if (!saveRes.ok) throw new Error("Could not save profile");
+        currentCandidate = await saveRes.json();
+        setCandidate(currentCandidate);
+        try {
+          localStorage.setItem("rozgarlink.candidateId", currentCandidate.id);
+        } catch {}
+      } catch {
+        alert("Could not save your profile before applying. Please try again.");
+        return;
+      }
+    }
+
+    try {
+      const res = await fetch(`/api/opportunities/${oppId}/apply`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          candidateId: currentCandidate.id,
+          candidateName: currentCandidate.name
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || "Failed to submit application");
+        return;
+      }
+
+      setCandidate((prev) => ({
+        ...prev,
+        appliedOpportunityIds: [...(prev.appliedOpportunityIds || []), oppId]
+      }));
+      setRefreshKey((k) => k + 1);
+      alert("Application submitted successfully! The recruiter will see your profile in their applicant ranking feed.");
+    } catch {
+      alert("Network error while submitting application.");
+    }
+  };
+
   const handleResetProfile = () => {
     setCandidate(EMPTY);
     try {
       localStorage.removeItem("rozgarlink.candidateId");
     } catch {}
+  };
+
+  const handleWeightChange = (id, val) => {
+    setWeights((prev) => ({ ...prev, [id]: val }));
+  };
+
+  const handleResetWeights = () => {
+    setWeights(DEFAULT_WEIGHTS);
   };
 
   return (
@@ -157,8 +225,13 @@ export default function App() {
             loading={loading}
             error={error}
             interestedIds={candidate.interestedOpportunityIds || []}
+            appliedIds={candidate.appliedOpportunityIds || []}
             onToggleInterest={toggleInterest}
+            onApply={handleApply}
             onGoToManage={() => setActiveTab("manage")}
+            weights={weights}
+            onWeightChange={handleWeightChange}
+            onResetWeights={handleResetWeights}
           />
         </main>
       )}
@@ -174,4 +247,3 @@ export default function App() {
     </>
   );
 }
-

@@ -80,7 +80,12 @@ function sanitizeOpportunity(p = {}) {
       requiredCertifications: toCleanUniqueList(rawReqCerts)
     },
     requiredSkills: toCleanUniqueList(p.requiredSkills),
-    preferredSkills: toCleanUniqueList(p.preferredSkills)
+    preferredSkills: toCleanUniqueList(p.preferredSkills),
+    salary: p.salary !== undefined && p.salary !== "" ? Number(p.salary) : 500000,
+    commuteDistanceKm: p.commuteDistanceKm !== undefined && p.commuteDistanceKm !== "" ? Number(p.commuteDistanceKm) : 15,
+    shift: String(p.shift || "Flexible").trim(),
+    timelineDays: p.timelineDays !== undefined && p.timelineDays !== "" ? Number(p.timelineDays) : 30,
+    applicants: Array.isArray(p.applicants) ? p.applicants : []
   };
 
   if (p.id) {

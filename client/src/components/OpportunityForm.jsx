@@ -17,6 +17,10 @@ export default function OpportunityForm({
   const [requiredCertifications, setRequiredCertifications] = useState([]);
   const [requiredSkills, setRequiredSkills] = useState([]);
   const [preferredSkills, setPreferredSkills] = useState([]);
+  const [salary, setSalary] = useState(500000);
+  const [commuteDistanceKm, setCommuteDistanceKm] = useState(15);
+  const [shift, setShift] = useState("Flexible");
+  const [timelineDays, setTimelineDays] = useState(30);
 
   const [submitting, setSubmitting] = useState(false);
   const [serverError, setServerError] = useState("");
@@ -34,6 +38,10 @@ export default function OpportunityForm({
       setRequiredCertifications(opportunity.criteria?.requiredCertifications || []);
       setRequiredSkills(opportunity.requiredSkills || []);
       setPreferredSkills(opportunity.preferredSkills || []);
+      setSalary(opportunity.salary ?? 500000);
+      setCommuteDistanceKm(opportunity.commuteDistanceKm ?? 15);
+      setShift(opportunity.shift || "Flexible");
+      setTimelineDays(opportunity.timelineDays ?? 30);
     } else {
       setTitle("");
       setCompany("");
@@ -45,6 +53,10 @@ export default function OpportunityForm({
       setRequiredCertifications([]);
       setRequiredSkills([]);
       setPreferredSkills([]);
+      setSalary(500000);
+      setCommuteDistanceKm(15);
+      setShift("Flexible");
+      setTimelineDays(30);
     }
     setServerError("");
   }, [opportunity, qualifications]);
@@ -104,7 +116,11 @@ export default function OpportunityForm({
         requiredCertifications
       },
       requiredSkills,
-      preferredSkills
+      preferredSkills,
+      salary: Number(salary) || 500000,
+      commuteDistanceKm: Number(commuteDistanceKm) || 15,
+      shift,
+      timelineDays: Number(timelineDays) || 30
     };
 
     try {
@@ -198,6 +214,58 @@ export default function OpportunityForm({
             Select either or both. Roles supporting both allow candidates in any mode.
           </small>
         )}
+      </div>
+
+      <div className="field">
+        <label htmlFor="opp-salary">Offered Annual Salary (₹)</label>
+        <input
+          id="opp-salary"
+          type="number"
+          min="0"
+          step="50000"
+          value={salary}
+          onChange={(e) => setSalary(Number(e.target.value))}
+        />
+        <small className="muted">Used for candidate salary fit scoring (P_offer vs P_ask).</small>
+      </div>
+
+      <div className="field">
+        <label htmlFor="opp-commute">Typical Commute Distance (km)</label>
+        <input
+          id="opp-commute"
+          type="number"
+          min="0"
+          max="150"
+          value={commuteDistanceKm}
+          onChange={(e) => setCommuteDistanceKm(Number(e.target.value))}
+        />
+        <small className="muted">Distance from city hub/office (D_job). 0 if remote.</small>
+      </div>
+
+      <div className="field">
+        <label htmlFor="opp-shift">Work Shift</label>
+        <select
+          id="opp-shift"
+          value={shift}
+          onChange={(e) => setShift(e.target.value)}
+        >
+          <option value="Flexible">Flexible Hours / Any Shift</option>
+          <option value="Day">Day Shift</option>
+          <option value="Night">Night Shift</option>
+        </select>
+      </div>
+
+      <div className="field">
+        <label htmlFor="opp-timeline">Hiring Timeline (Days)</label>
+        <input
+          id="opp-timeline"
+          type="number"
+          min="1"
+          max="180"
+          value={timelineDays}
+          onChange={(e) => setTimelineDays(Number(e.target.value))}
+        />
+        <small className="muted">Target start timeline for applicant availability scoring.</small>
       </div>
 
       <fieldset className="criteria-fieldset stack">

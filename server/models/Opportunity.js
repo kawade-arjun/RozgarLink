@@ -20,7 +20,19 @@ const OpportunitySchema = new mongoose.Schema(
     remote: { type: Boolean, default: false },
     criteria: { type: CriteriaSchema, default: () => ({}) },
     requiredSkills: { type: [String], default: [] },
-    preferredSkills: { type: [String], default: [] }
+    preferredSkills: { type: [String], default: [] },
+    salary: { type: Number, default: 500000 },
+    commuteDistanceKm: { type: Number, default: 15 },
+    shift: { type: String, default: "Flexible" },
+    timelineDays: { type: Number, default: 30 },
+    applicants: [
+      {
+        candidateId: { type: String, required: true },
+        candidateName: { type: String, default: "" },
+        appliedAt: { type: String, default: () => new Date().toISOString() },
+        status: { type: String, default: "Applied" }
+      }
+    ]
   },
   {
     timestamps: true,

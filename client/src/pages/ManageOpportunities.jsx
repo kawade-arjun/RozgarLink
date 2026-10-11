@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import OpportunityForm from "../components/OpportunityForm.jsx";
+import ApplicantShortlist from "../components/ApplicantShortlist.jsx";
 
 export default function ManageOpportunities({ qualifications, onOpportunitiesChanged }) {
   const [opportunities, setOpportunities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [editingOpp, setEditingOpp] = useState(null);
+  const [activeShortlistOppId, setActiveShortlistOppId] = useState(null);
 
   const fetchOpportunities = async () => {
     try {
@@ -94,6 +96,15 @@ export default function ManageOpportunities({ qualifications, onOpportunitiesCha
                     <div className="manage-actions">
                       <button
                         type="button"
+                        className={`btn ${activeShortlistOppId === opp.id ? "on" : ""}`}
+                        onClick={() =>
+                          setActiveShortlistOppId(activeShortlistOppId === opp.id ? null : opp.id)
+                        }
+                      >
+                        Applicants ({opp.applicants?.length || 0})
+                      </button>
+                      <button
+                        type="button"
                         className="btn"
                         onClick={() => {
                           setEditingOpp(opp);
@@ -130,6 +141,13 @@ export default function ManageOpportunities({ qualifications, onOpportunitiesCha
                       </span>
                     ))}
                   </div>
+
+                  {activeShortlistOppId === opp.id && (
+                    <ApplicantShortlist
+                      opportunity={opp}
+                      onClose={() => setActiveShortlistOppId(null)}
+                    />
+                  )}
                 </article>
               ))}
             </div>

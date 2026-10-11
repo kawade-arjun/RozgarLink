@@ -19,7 +19,7 @@ router.get("/meta", (_req, res) =>
 /**
  * Pure-ish matching runner that loads opportunities from the store on every request.
  */
-async function runMatch(rawCandidate) {
+async function runMatch(rawCandidate, rawWeights = {}) {
   const candidate = sanitize(rawCandidate);
   const opportunities = await opportunityStore.getAll();
 
@@ -41,12 +41,20 @@ async function runMatch(rawCandidate) {
     }
   }
 
-  // STAGE 2: rank eligible only
-  const ranked = rankEligible(candidate, eligibleOpps).map((o) => {
+  // STAGE 2: rank eligible only using Master Ranking Formula (Gate 2)
+  const ranked = rankEligible(candidate, eligibleOpps, rawWeights).map((o) => {
     const orig = eligibleOpps.find((e) => e.id === o.id);
+    const hasApplied = (candidate.appliedOpportunityIds || []).includes(o.id) ||
+      (o.applicants || []).some((a) => a.candidateId === candidate.id);
     return {
       ...o,
-      ...orig
+      ...orig,
+      score: o.score,
+      breakdown: o.breakdown,
+      weights: o.weights,
+      matchedSkills: o.matchedSkills,
+      missingSkills: o.missingSkills,
+      hasApplied
     };
   });
 
@@ -87,7 +95,7 @@ async function runMatch(rawCandidate) {
 // Stateless: every profile edit re-posts here and gets a fresh result.
 router.post("/match", async (req, res, next) => {
   try {
-    const result = await runMatch(req.body?.candidate);
+    const result = await runMatch(req.body?.candidate, req.body?.weights);
     res.json(result);
   } catch (err) {
     next(err);

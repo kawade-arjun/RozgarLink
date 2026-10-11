@@ -243,3 +243,118 @@ button, input, select, textarea { font: inherit; }
 .note { background: var(--bad-bg); padding: .5rem .7rem; border-radius: 6px; margin: .5rem 0; color: var(--bad); font-weight: 500; }
 .empty-state { text-align: center; padding: 2rem 1rem; }
 .empty-opportunities { text-align: center; padding: 2.5rem 1.5rem; }
+
+/* Dynamic Slider Panel */
+.slider-panel {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 1.2rem;
+  margin-bottom: 1.2rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+}
+.slider-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .5rem;
+  margin-bottom: 1rem;
+}
+.slider-header h3 { margin: 0; font-size: 1.05rem; color: var(--accent); }
+.slider-header p { margin: 0; font-size: .85rem; color: var(--muted); }
+.slider-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.2rem;
+}
+.slider-control {
+  display: flex;
+  flex-direction: column;
+  gap: .3rem;
+}
+.slider-label-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: .86rem;
+  font-weight: 600;
+}
+.slider-pct {
+  color: var(--accent);
+  background: #e8eef8;
+  padding: .1rem .45rem;
+  border-radius: 4px;
+  font-size: .8rem;
+}
+.slider-input {
+  width: 100%;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.slider-subtext {
+  font-size: .75rem;
+  color: var(--muted);
+}
+
+/* Applicant Cards for Perspective 2 */
+.applicant-card {
+  border: 1px solid var(--line);
+  border-left: 6px solid var(--accent);
+  border-radius: 10px;
+  padding: 1rem;
+  background: var(--card);
+  margin-bottom: .8rem;
+}
+.applicant-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+.applicant-score {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--accent);
+  text-align: right;
+  line-height: 1.1;
+}
+.breakdown-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem;
+  margin: .6rem 0;
+}
+.breakdown-pill {
+  font-size: .78rem;
+  padding: .2rem .5rem;
+  border-radius: 6px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  color: var(--ink);
+}
+.breakdown-pill strong { color: var(--accent); }
+
+/* Apply button & badge */
+.btn-apply {
+  background: var(--good);
+  color: #fff;
+  border: 1px solid var(--good);
+  padding: .4rem .9rem;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s;
+}
+.btn-apply:hover:not(:disabled) {
+  background: #17633d;
+}
+.btn-applied {
+  background: var(--good-bg);
+  color: var(--good);
+  border: 1px solid #b9dfc9;
+  padding: .4rem .9rem;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: default;
+}
+

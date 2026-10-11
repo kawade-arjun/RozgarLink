@@ -102,10 +102,58 @@ async function remove(id) {
   return removed;
 }
 
+async function addApplicant(oppId, applicant) {
+  if (isMongoReady()) {
+    const opp = await Opportunity.findOne({ id: oppId });
+    if (!opp) return null;
+    const exists = (opp.applicants || []).some((a) => a.candidateId === applicant.candidateId);
+    if (!exists) {
+      opp.applicants = opp.applicants || [];
+      opp.applicants.push({
+        candidateId: applicant.candidateId,
+        candidateName: applicant.candidateName || "",
+        appliedAt: new Date().toISOString(),
+        status: "Applied"
+      });
+      await opp.save();
+    }
+    return cleanDoc(opp);
+  }
+  let updated = null;
+  await jsonFile.update(FILE_PATH, (items) => {
+    return items.map((o) => {
+      if (o.id !== oppId) return o;
+      const applicants = o.applicants || [];
+      if (applicants.some((a) => a.candidateId === applicant.candidateId)) return o;
+      updated = {
+        ...o,
+        applicants: [
+          ...applicants,
+          {
+            candidateId: applicant.candidateId,
+            candidateName: applicant.candidateName || "",
+            appliedAt: new Date().toISOString(),
+            status: "Applied"
+          }
+        ]
+      };
+      return updated;
+    });
+  });
+  return updated;
+}
+
+async function getApplicants(oppId) {
+  const opp = await getById(oppId);
+  return opp ? (opp.applicants || []) : [];
+}
+
 module.exports = {
   getAll,
   getById,
   create,
   update,
-  remove
+  remove,
+  addApplicant,
+  getApplicants
 };

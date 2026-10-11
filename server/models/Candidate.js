@@ -38,6 +38,11 @@ const CandidateSchema = new mongoose.Schema(
     skills: { type: [String], default: [] },
     certifications: { type: [String], default: [] },
     interestedOpportunityIds: { type: [String], default: [] },
+    appliedOpportunityIds: { type: [String], default: [] },
+    expectedSalary: { type: Number, default: 400000 },
+    maxCommuteKm: { type: Number, default: 25 },
+    preferredShift: { type: String, default: "Flexible" },
+    noticePeriodDays: { type: Number, default: 0 },
     resume: { type: ResumeSchema, default: null }
   },
   {

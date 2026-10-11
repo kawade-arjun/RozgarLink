@@ -10,7 +10,7 @@
  */
 
 const SYNONYMS = {
-  "react": ["reactjs", "react.js", "react js", "react developer"],
+  "react": ["reactjs", "react.js", "react js", "react developer", "frontend ui", "front end ui"],
   "javascript": ["js", "ecmascript", "es6", "java script", "vanilla js"],
   "typescript": ["ts"],
   "node.js": ["node", "nodejs", "node js"],
@@ -75,20 +75,79 @@ function similarity(a, b) {
   return s >= FUZZY_THRESHOLD ? { score: s, type: "fuzzy" } : { score: 0, type: "none" };
 }
 
-/** Match a list of wanted skills against what the candidate has. */
+const FOUNDATIONAL_MAP = {
+  "typescript": ["javascript", "js", "ecmascript"],
+  "react": ["javascript", "js", "frontend ui", "html", "css", "web development"],
+  "node.js": ["javascript", "js"],
+  "machine learning": ["python", "py", "maths", "statistics"],
+  "tailwind css": ["css"],
+  "power bi": ["ms excel", "excel", "sql"],
+  "gst filing": ["tally", "accounting"],
+  "plc programming": ["electrical wiring", "electronics"],
+  "postgresql": ["sql"],
+  "mysql": ["sql"],
+  "express": ["node.js", "javascript"],
+  "django": ["python"],
+  "fastapi": ["python"],
+  "flask": ["python"]
+};
+
+/** Match a list of wanted skills against what the candidate has.
+ * Returns mu(k): 1.0 (exact/alias), 0.5 (foundational), 0.0 (none)
+ */
 function matchSkills(candidateSkills = [], wantedSkills = []) {
   const matched = [];
   const missing = [];
+
   for (const wanted of wantedSkills) {
     let best = null;
     for (const have of candidateSkills) {
       const sim = similarity(have, wanted);
-      if (sim.score > 0 && (!best || sim.score > best.score)) best = { have, ...sim };
+      if (sim.score > 0 && (!best || sim.score > best.score)) {
+        best = { have, ...sim, mu: 1.0 };
+      }
     }
-    if (best) matched.push({ skill: wanted, candidateSkill: best.have, score: best.score, type: best.type });
-    else missing.push(wanted);
+
+    if (best) {
+      matched.push({
+        skill: wanted,
+        candidateSkill: best.have,
+        score: best.score,
+        mu: 1.0,
+        type: best.type
+      });
+    } else {
+      // Check for related foundational skill (mu = 0.5)
+      const canonWanted = canonical(wanted);
+      const foundations = FOUNDATIONAL_MAP[canonWanted] || [];
+      let foundBase = null;
+
+      for (const base of foundations) {
+        for (const have of candidateSkills) {
+          const sim = similarity(have, base);
+          if (sim.score > 0) {
+            foundBase = have;
+            break;
+          }
+        }
+        if (foundBase) break;
+      }
+
+      if (foundBase) {
+        matched.push({
+          skill: wanted,
+          candidateSkill: foundBase,
+          score: 0.5,
+          mu: 0.5,
+          type: "foundational"
+        });
+      } else {
+        missing.push(wanted);
+      }
+    }
   }
+
   return { matched, missing };
 }
 
-module.exports = { matchSkills, similarity, canonical, SYNONYMS };
+module.exports = { matchSkills, similarity, canonical, SYNONYMS, FOUNDATIONAL_MAP };

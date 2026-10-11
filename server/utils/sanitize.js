@@ -101,6 +101,11 @@ function sanitize(p = {}) {
     skills: toCleanList(p.skills),
     certifications: toCleanList(p.certifications),
     interestedOpportunityIds: toCleanList(p.interestedOpportunityIds),
+    appliedOpportunityIds: toCleanList(p.appliedOpportunityIds),
+    expectedSalary: p.expectedSalary !== undefined && p.expectedSalary !== "" ? Number(p.expectedSalary) : 400000,
+    maxCommuteKm: p.maxCommuteKm !== undefined && p.maxCommuteKm !== "" ? Number(p.maxCommuteKm) : 25,
+    preferredShift: String(p.preferredShift || "Flexible").trim(),
+    noticePeriodDays: p.noticePeriodDays !== undefined && p.noticePeriodDays !== "" ? Number(p.noticePeriodDays) : 0,
     resume
   };
 
