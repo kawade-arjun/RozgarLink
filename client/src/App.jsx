@@ -5,33 +5,33 @@ import ManageOpportunities from "./pages/ManageOpportunities.jsx";
 import AuthPage from "./pages/AuthPage.jsx";
 import SettingsModal from "./components/SettingsModal.jsx";
 
-const EMPTY = {
-  name: "",
+const createBlankCandidate = (user = null) => ({
+  name: user?.name || "",
+  email: user?.email || "",
   location: "",
   preferredWorkModes: ["Offline", "Online"],
   preferredLocations: [],
   education: [],
-  qualification: "12th",
+  qualification: "",
   experienceYears: 0,
   skills: [],
   certifications: [],
   interestedOpportunityIds: [],
   appliedOpportunityIds: [],
-  expectedSalary: 400000,
+  expectedSalary: "",
   maxCommuteKm: 25,
-  preferredShift: "Flexible",
+  preferredShift: "Day",
   noticePeriodDays: 0
-};
+});
 
 const DEFAULT_WEIGHTS = { u1: 70, u2: 10.5, u3: 10.5, u4: 9.0 };
 
 export default function App() {
-  const [candidate, setCandidate] = useState(EMPTY);
+  const [candidate, setCandidate] = useState(createBlankCandidate());
   const [qualifications, setQualifications] = useState([]);
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState("find"); // "find" | "manage"
   const [refreshKey, setRefreshKey] = useState(0);
   const [weights, setWeights] = useState(DEFAULT_WEIGHTS);
 
@@ -41,15 +41,44 @@ export default function App() {
 
   const reqId = useRef(0);
 
-  // Fetch qualification list + check localStorage for existing user & candidate
+  const loadCandidateForUser = async (user) => {
+    if (!user || user.role !== "candidate") {
+      setCandidate(createBlankCandidate(user));
+      return;
+    }
+    try {
+      const res = await fetch(`/api/candidates/by-email/${encodeURIComponent(user.email)}`);
+      if (res.ok) {
+        const data = await res.json();
+        setCandidate({
+          ...createBlankCandidate(user),
+          ...data,
+          name: data.name || user.name || "",
+          email: user.email,
+          education: data.education || [],
+          skills: data.skills || [],
+          certifications: data.certifications || [],
+          preferredLocations: data.preferredLocations || [],
+          preferredWorkModes: data.preferredWorkModes || ["Offline", "Online"]
+        });
+      } else {
+        // Fresh blank record for new candidate user
+        setCandidate(createBlankCandidate(user));
+      }
+    } catch {
+      setCandidate(createBlankCandidate(user));
+    }
+  };
+
+  // Check stored session + fetch qualification list
   useEffect(() => {
     try {
       const storedUser = localStorage.getItem("rozgarlink.user");
       if (storedUser) {
         const parsed = JSON.parse(storedUser);
         setCurrentUser(parsed);
-        if (parsed.role === "recruiter") {
-          setActiveTab("manage");
+        if (parsed.role === "candidate") {
+          loadCandidateForUser(parsed);
         }
       }
     } catch {}
@@ -60,39 +89,11 @@ export default function App() {
         setQualifications(meta.qualifications || []);
       })
       .catch(() => setError("Cannot reach the server. Is it running on port 5000?"));
-
-    let storedId = null;
-    try {
-      storedId = localStorage.getItem("rozgarlink.candidateId");
-    } catch {}
-
-    if (storedId) {
-      fetch(`/api/candidates/${storedId}`)
-        .then(async (res) => {
-          if (res.status === 404) {
-            try {
-              localStorage.removeItem("rozgarlink.candidateId");
-            } catch {}
-            setCandidate(EMPTY);
-            return;
-          }
-          if (res.ok) {
-            const data = await res.json();
-            setCandidate({
-              ...EMPTY,
-              ...data,
-              preferredWorkModes: data.preferredWorkModes || ["Offline", "Online"],
-              education: data.education || []
-            });
-          }
-        })
-        .catch(() => {});
-    }
   }, []);
 
   // REAL-TIME: re-runs eligibility + ranking (debounced 200ms) on candidate edit, opp refresh, or weights adjustment
   useEffect(() => {
-    if (!currentUser) return; // Do not run match calculations when not logged in
+    if (!currentUser || currentUser.role !== "candidate") return;
     const id = ++reqId.current;
     const t = setTimeout(async () => {
       setLoading(true);
@@ -150,9 +151,6 @@ export default function App() {
         if (!saveRes.ok) throw new Error("Could not save profile");
         currentCandidate = await saveRes.json();
         setCandidate(currentCandidate);
-        try {
-          localStorage.setItem("rozgarlink.candidateId", currentCandidate.id);
-        } catch {}
       } catch {
         alert("Could not save your profile before applying. Please try again.");
         return;
@@ -186,10 +184,7 @@ export default function App() {
   };
 
   const handleResetProfile = () => {
-    setCandidate(EMPTY);
-    try {
-      localStorage.removeItem("rozgarlink.candidateId");
-    } catch {}
+    setCandidate(createBlankCandidate(currentUser));
   };
 
   const handleWeightChange = (id, val) => {
@@ -206,22 +201,20 @@ export default function App() {
       localStorage.setItem("rozgarlink.user", JSON.stringify(user));
     } catch {}
 
-    if (user.role === "recruiter") {
-      setActiveTab("manage");
+    if (user.role === "candidate") {
+      loadCandidateForUser(user);
     } else {
-      setActiveTab("find");
-      setCandidate((prev) => ({
-        ...prev,
-        name: prev.name || user.name || "",
-        email: prev.email || user.email || ""
-      }));
+      setCandidate(createBlankCandidate(user));
     }
   };
 
   const handleLogout = () => {
     setCurrentUser(null);
+    setCandidate(createBlankCandidate());
+    setResult(null);
     try {
       localStorage.removeItem("rozgarlink.user");
+      localStorage.removeItem("rozgarlink.candidateId");
     } catch {}
   };
 
@@ -233,25 +226,6 @@ export default function App() {
             <h1>RozgarLink</h1>
           </div>
 
-          {currentUser && (
-            <div className="tab-nav">
-              <button
-                type="button"
-                className={`tab-btn ${activeTab === "find" ? "active" : ""}`}
-                onClick={() => setActiveTab("find")}
-              >
-                Job Seeker
-              </button>
-              <button
-                type="button"
-                className={`tab-btn ${activeTab === "manage" ? "active" : ""}`}
-                onClick={() => setActiveTab("manage")}
-              >
-                Recruiter Portal
-              </button>
-            </div>
-          )}
-
           <div className="header-right-corner">
             {currentUser ? (
               <>
@@ -260,12 +234,15 @@ export default function App() {
                     {(currentUser.name || "U")[0].toUpperCase()}
                   </div>
                   <span className="user-name-text">{currentUser.name}</span>
+                  <span className="badge-role" style={{ marginLeft: "0.2rem", fontSize: "0.72rem" }}>
+                    {currentUser.role === "recruiter" ? "Recruiter" : "Job Seeker"}
+                  </span>
                 </div>
                 <button
                   type="button"
                   className="btn-settings"
                   onClick={() => setIsSettingsOpen(true)}
-                  title="Settings & Reset Password"
+                  title="Settings & Change Password"
                 >
                   <span>⚙️</span>
                   <span>Settings</span>
@@ -280,7 +257,7 @@ export default function App() {
         <main>
           <AuthPage onAuthSuccess={handleAuthSuccess} />
         </main>
-      ) : activeTab === "find" ? (
+      ) : currentUser.role === "candidate" ? (
         <main className="layout">
           <CandidateForm
             candidate={candidate}
@@ -295,7 +272,6 @@ export default function App() {
             appliedIds={candidate.appliedOpportunityIds || []}
             onToggleInterest={toggleInterest}
             onApply={handleApply}
-            onGoToManage={() => setActiveTab("manage")}
             weights={weights}
             onWeightChange={handleWeightChange}
             onResetWeights={handleResetWeights}

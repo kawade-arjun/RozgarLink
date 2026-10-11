@@ -142,9 +142,10 @@ export default function CandidateForm({
           id="expected-salary"
           type="number"
           min="0"
-          step="50000"
-          value={candidate.expectedSalary ?? 400000}
-          onChange={(e) => set({ expectedSalary: Number(e.target.value) })}
+          step="25000"
+          placeholder="e.g. 400000"
+          value={candidate.expectedSalary || ""}
+          onChange={(e) => set({ expectedSalary: e.target.value === "" ? "" : Number(e.target.value) })}
         />
         <small className="muted">Used for dynamic salary fit calculation against job offers.</small>
       </div>
@@ -156,8 +157,9 @@ export default function CandidateForm({
           type="number"
           min="1"
           max="200"
-          value={candidate.maxCommuteKm ?? 25}
-          onChange={(e) => set({ maxCommuteKm: Number(e.target.value) })}
+          placeholder="e.g. 25"
+          value={candidate.maxCommuteKm || ""}
+          onChange={(e) => set({ maxCommuteKm: e.target.value === "" ? "" : Number(e.target.value) })}
         />
         <small className="muted">Used for travel feasibility & distance scoring.</small>
       </div>
@@ -182,8 +184,9 @@ export default function CandidateForm({
           type="number"
           min="0"
           max="180"
-          value={candidate.noticePeriodDays ?? 0}
-          onChange={(e) => set({ noticePeriodDays: Number(e.target.value) })}
+          placeholder="0 for immediate joining"
+          value={candidate.noticePeriodDays !== undefined && candidate.noticePeriodDays !== null ? candidate.noticePeriodDays : ""}
+          onChange={(e) => set({ noticePeriodDays: e.target.value === "" ? 0 : Number(e.target.value) })}
         />
         <small className="muted">0 for immediate joining. Used for recruiter availability fit.</small>
       </div>

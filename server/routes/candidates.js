@@ -83,6 +83,21 @@ router.delete("/resume/:filename", (req, res) => {
   res.status(204).end();
 });
 
+// GET /api/candidates/by-email/:email
+router.get("/by-email/:email", async (req, res, next) => {
+  try {
+    const email = req.params.email ? req.params.email.toLowerCase().trim() : "";
+    const all = await candidateStore.getAll();
+    const found = all.find((c) => c.email && c.email.toLowerCase().trim() === email);
+    if (!found) {
+      return res.status(404).json({ error: "Profile not found" });
+    }
+    res.json(found);
+  } catch (err) {
+    next(err);
+  }
+});
+
 // GET /api/candidates
 router.get("/", async (_req, res, next) => {
   try {

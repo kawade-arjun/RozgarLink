@@ -41,20 +41,8 @@ router.post("/signup", async (req, res) => {
       isVerified: true
     });
 
-    // If candidate, associate or create candidate profile
+    // Check if candidate profile already exists for this email
     let candidateProfile = await Candidate.findOne({ email: cleanEmail });
-    if (!candidateProfile && role === "candidate") {
-      candidateProfile = await Candidate.create({
-        id: "cand-" + crypto.randomBytes(4).toString("hex"),
-        name: name.trim(),
-        email: cleanEmail,
-        skills: [],
-        qualification: "secondary",
-        locations: ["Remote"],
-        languages: ["English"],
-        appliedOpportunityIds: []
-      });
-    }
 
     const userObj = newUser.toJSON ? newUser.toJSON() : newUser;
     res.status(201).json({
